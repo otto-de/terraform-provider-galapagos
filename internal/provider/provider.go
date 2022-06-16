@@ -30,11 +30,48 @@ func (p *provider) Configure(ctx context.Context, req tfsdk.ConfigureProviderReq
 }
 
 func (p *provider) GetResources(ctx context.Context) (map[string]tfsdk.ResourceType, diag.Diagnostics) {
-	return map[string]tfsdk.ResourceType{}, nil
+	return map[string]tfsdk.ResourceType{
+	/* galapagos_user -> OIDC
+	   
+	 * galapagos_application
+	// - name
+	// - id
+	// - bcap_name - datasource?
+	// - bcap_id
+	// - alias = list(string)
+	// create -> send request / approval
+	// 
+	 * galapagos_client_access_key
+	// - secret_id 
+	// - key
+	
+	 * galapagos_topic
+	   - name
+	   - partitions
+	   - criticality
+	   - application
+	   - env
+	   - schema list(string)/list(ref)
+	   - cleanup
+	   - retention
+
+	 * galapagos_schema
+	   - content = string
+	   - type
+	   - name computed
+
+         * galapagos_application_subscription
+	   - topic
+	   - application
+	 */
+	}, nil
 }
 
 func (p *provider) GetDataSources(ctx context.Context) (map[string]tfsdk.DataSourceType, diag.Diagnostics) {
-	return map[string]tfsdk.DataSourceType{}, nil
+	return map[string]tfsdk.DataSourceType{
+	/* galapagos_application_ownership
+	 */
+	}, nil
 }
 
 func (p *provider) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnostics) {
