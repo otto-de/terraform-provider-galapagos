@@ -5,6 +5,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/otto-de/terraform-provider-galapagos/internal/resources"
 )
 
 type provider struct {
@@ -31,49 +32,54 @@ func (p *provider) Configure(ctx context.Context, req tfsdk.ConfigureProviderReq
 
 func (p *provider) GetResources(ctx context.Context) (map[string]tfsdk.ResourceType, diag.Diagnostics) {
 	return map[string]tfsdk.ResourceType{
-	/* galapagos_user -> OIDC
-	   
-	 * galapagos_application
-	// - name
-	// - id
-	// - bcap_name - datasource?
-	// - bcap_id
-	// - alias = list(string)
-	// create -> send request / approval
-	// 
-	 * galapagos_client_access_key
-	// - secret_id 
-	// - key
-	
-	 * galapagos_topic
-	   - name
-	   - partitions
-	   - criticality
-	   - application
-	   - env
-	   - schema list(string)/list(ref)
-	   - cleanup
-	   - retention
+		"galapagos_application": resources.ApplicationType,
+		//"galapagos_client_access_key": resource.ClientAccessKeyType,
+		//"galapagos_topic": resource.TopicType,
+		//"galapagos_schema": resource.SchemaType,
 
-	 * galapagos_schema
-	   - content = string
-	   - type
-	   - name computed
+		/* galapagos_user -> OIDC
+			// create -> send request / approval
+			//
+			 * galapagos_client_access_key
+			// - secret_id
+			// - key
 
-         * galapagos_application_subscription
-	   - topic
-	   - application
-	 */
+			 * galapagos_topic
+			   - name
+			   - partitions
+			   - criticality
+			   - application
+			   - env
+			   - schema list(string)/list(ref)
+			   - cleanup
+			   - retention
+
+			 * galapagos_schema
+			   - content = string
+			   - type
+			   - name computed
+
+		         * galapagos_application_subscription
+			   - topic
+			   - application
+		*/
 	}, nil
 }
 
 func (p *provider) GetDataSources(ctx context.Context) (map[string]tfsdk.DataSourceType, diag.Diagnostics) {
 	return map[string]tfsdk.DataSourceType{
-	/* galapagos_application_ownership
-	 */
+		/* galapagos_application_ownership
+		 */
 	}, nil
 }
 
 func (p *provider) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{}, nil
+	/* a file with
+	- access token
+	- expiry
+	- refresh_token
+	- refresh_expiry
+	- id_token
+	*/
 }
