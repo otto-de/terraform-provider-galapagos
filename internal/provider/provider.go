@@ -32,36 +32,32 @@ func (p *provider) Configure(ctx context.Context, req tfsdk.ConfigureProviderReq
 
 func (p *provider) GetResources(ctx context.Context) (map[string]tfsdk.ResourceType, diag.Diagnostics) {
 	return map[string]tfsdk.ResourceType{
+		"galapagos_account":     resources.AccountType,
+		"galapagos_account_key": resources.AccountKeyType,
 		"galapagos_application": resources.ApplicationType,
 		//"galapagos_client_access_key": resource.ClientAccessKeyType,
 		//"galapagos_topic": resource.TopicType,
 		//"galapagos_schema": resource.SchemaType,
 
-		/* galapagos_user -> OIDC
-			// create -> send request / approval
-			//
-			 * galapagos_client_access_key
-			// - secret_id
-			// - key
+		/*
+				 * galapagos_topic
+				   - name
+				   - partitions
+				   - criticality
+				   - application
+				   - env
+				   - schema list(string)/list(ref)
+				   - cleanup
+				   - retention
 
-			 * galapagos_topic
-			   - name
-			   - partitions
-			   - criticality
-			   - application
-			   - env
-			   - schema list(string)/list(ref)
-			   - cleanup
-			   - retention
+				 * galapagos_schema
+				   - content = string
+				   - type
+				   - name computed
 
-			 * galapagos_schema
-			   - content = string
-			   - type
-			   - name computed
-
-		         * galapagos_application_subscription
-			   - topic
-			   - application
+			         * galapagos_application_subscription
+				   - topic
+				   - application
 		*/
 	}, nil
 }
