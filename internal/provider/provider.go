@@ -17,6 +17,7 @@ import (
 )
 
 type provider struct {
+	clientcredentials.Config
 }
 
 type providerConfig struct {
@@ -48,24 +49,24 @@ func (p *provider) Configure(ctx context.Context, req tfsdk.ConfigureProviderReq
 		return
 	}
 
-	configureFromConfigAttribute(ctx, pc.Config, resp)
+	configureFromConfigAttribute(ctx, pc.Config, &p.Config, resp)
 }
 
-func configureFromConfigAttribute(ctx context.Context, config types.String, resp *tfsdk.ConfigureProviderResponse) {
+func configureFromConfigAttribute(ctx context.Context, config types.String, cfg *clientcredentials.Config, resp *tfsdk.ConfigureProviderResponse) {
 
 	if config.Null || config.Value == "" {
 		dir, err := os.UserConfigDir()
 		if err != nil {
 			panic(err)
 		}
-		configureFromConfigPath(ctx, fmt.Sprintf("%s/galapagos/config.json", dir), resp)
+		configureFromConfigPath(ctx, fmt.Sprintf("%s/galapagos/config.json", dir), cfg, resp)
 		return
 	}
 
-	configureFromConfigPath(ctx, config.Value, resp)
+	configureFromConfigPath(ctx, config.Value, cfg, resp)
 }
 
-func configureFromConfigPath(ctx context.Context, configFilePath string, resp *tfsdk.ConfigureProviderResponse) {
+func configureFromConfigPath(ctx context.Context, configFilePath string, cfg *clientcredentials.Config, resp *tfsdk.ConfigureProviderResponse) {
 
 	auth := authConfig{}
 	func() {
@@ -94,7 +95,7 @@ func configureFromConfigPath(ctx context.Context, configFilePath string, resp *t
 		return
 	}
 
-	cfg := clientcredentials.Config{
+	*cfg = clientcredentials.Config{
 		ClientID:     auth.ClientId,
 		ClientSecret: auth.ClientSecret,
 		TokenURL:     p.Endpoint().TokenURL,
