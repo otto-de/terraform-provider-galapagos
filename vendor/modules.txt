@@ -94,7 +94,7 @@ github.com/vmihailenco/msgpack/v4/codes
 github.com/vmihailenco/tagparser
 github.com/vmihailenco/tagparser/internal
 github.com/vmihailenco/tagparser/internal/parser
-# golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
+# golang.org/x/crypto v0.0.0-20201216223049-8b5274cf687f
 ## explicit; go 1.11
 golang.org/x/crypto/ed25519
 golang.org/x/crypto/ed25519/internal/edwards25519
