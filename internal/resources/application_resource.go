@@ -4,9 +4,11 @@ import (
 	"context"
 
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/otto-de/terraform-provider-galapagos/internal/credentials"
 )
 
 type applicationResource struct {
+	client credentials.ClientWithCredentials
 }
 
 func (r *applicationResource) Create(ctx context.Context, req tfsdk.CreateResourceRequest, resp *tfsdk.CreateResourceResponse) {

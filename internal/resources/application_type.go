@@ -6,6 +6,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/otto-de/terraform-provider-galapagos/internal/credentials"
 )
 
 var (
@@ -59,5 +60,8 @@ func (t *applicationType) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Dia
 }
 
 func (t *applicationType) NewResource(ctx context.Context, p tfsdk.Provider) (tfsdk.Resource, diag.Diagnostics) {
-	return &applicationResource{}, nil
+	cfg := p.(credentials.ClientWithCredentials)
+	return &applicationResource{
+		client: cfg,
+	}, nil
 }
