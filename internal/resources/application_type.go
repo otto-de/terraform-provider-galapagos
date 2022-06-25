@@ -62,6 +62,6 @@ func (t *applicationType) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Dia
 func (t *applicationType) NewResource(ctx context.Context, p tfsdk.Provider) (tfsdk.Resource, diag.Diagnostics) {
 	cfg := p.(credentials.ClientWithCredentials)
 	return &applicationResource{
-		client: cfg,
+		lateClient: cfg,
 	}, nil
 }
