@@ -10,6 +10,10 @@ import (
 	"golang.org/x/oauth2/clientcredentials"
 )
 
+var (
+	Provider = New()()
+)
+
 func TestProvider(t *testing.T) {
 	resp := &tfsdk.ConfigureProviderResponse{}
 	cfg := clientcredentials.Config{}
