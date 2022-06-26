@@ -41,6 +41,6 @@ func (t *accountType) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnos
 func (t *accountType) NewResource(ctx context.Context, p tfsdk.Provider) (tfsdk.Resource, diag.Diagnostics) {
 	cfg := p.(credentials.ClientWithCredentials)
 	return &accountResource{
-		client: cfg,
+		lateClient: cfg,
 	}, nil
 }

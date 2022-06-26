@@ -7,18 +7,23 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/otto-de/terraform-provider-galapagos/internal/galapagos"
+	"github.com/otto-de/terraform-provider-galapagos/internal/rest"
 )
 
 var (
-	ts = galapagos.NewTestServer(context.Background())
+	ts          = galapagos.NewTestServer(context.Background())
+	restDetails = &rest.RESTConfig{
+		BaseUrl: ts.URL,
+		Type:    galapagos.APPLICATION_REST,
+	}
 )
 
 func TestCreate(t *testing.T) {
 
 	p := (&applicationResource{
-		restUrl: ts.URL,
+		restDetails: restDetails,
 	}).WithClient(ts.Client())
-	d := applicationResourceData{
+	d := applicationState{
 		name: types.String{Value: "foo"},
 		bcap: types.String{Value: "capyb"},
 	}
@@ -46,7 +51,7 @@ func TestDelete(t *testing.T) {
 		panic("Test setup invalid")
 	}
 	p := (&applicationResource{
-		restUrl: ts.URL,
+		restDetails: restDetails,
 	}).WithClient(ts.Client())
 	diags := p.sendDeleteToREST(context.Background(), applications[0].Id)
 	if diags.HasError() {
@@ -66,17 +71,17 @@ func TestGet(t *testing.T) {
 	}
 
 	p := (&applicationResource{
-		restUrl: ts.URL,
+		restDetails: restDetails,
 	}).WithClient(ts.Client())
 	_, err := p.getStateFromREST(context.Background(), "notapp")
 	if err == nil {
 		t.Fatal("Error not returned from getState")
 	}
-	if err != ErrNotExist {
+	if err != rest.ErrNotExist {
 		t.Fatal("Wrong error returned from getState:", err)
 	}
 
-	d := &applicationResourceData{
+	d := &applicationState{
 		id:   types.String{Value: "bar"},
 		name: types.String{Value: "foobar"},
 		bcap: types.String{Value: "capbp"},
