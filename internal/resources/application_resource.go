@@ -2,22 +2,15 @@ package resources
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
-	"fmt"
-	"io"
 	"net/http"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/otto-de/terraform-provider-galapagos/internal/credentials"
+	"github.com/otto-de/terraform-provider-galapagos/internal/rest"
 	"github.com/otto-de/terraform-provider-galapagos/internal/typeconvert"
-)
-
-var (
-	ErrNotExist = errors.New("Application does not exist")
 )
 
 type applicationCreateRequest struct {
@@ -30,6 +23,14 @@ type applicationCreateResponse struct {
 	Id string `json:"id"`
 }
 
+type applicationDeleteRequest struct {
+	id string
+}
+
+type applicationDescribeRequest struct {
+	id string
+}
+
 type applicationDescribeResponse struct {
 	Name    string   `json:"name"`
 	Bcap    string   `json:"bcap"`
@@ -37,8 +38,16 @@ type applicationDescribeResponse struct {
 }
 
 type applicationResource struct {
-	lateClient credentials.ClientWithCredentials
-	restUrl    string
+	lateClient  credentials.ClientWithCredentials
+	restDetails *rest.RESTConfig
+}
+
+func (r *applicationDeleteRequest) String() string {
+	return r.id
+}
+
+func (r *applicationDescribeRequest) String() string {
+	return r.id
 }
 
 func (r *applicationResource) WithClient(client *http.Client) *applicationResource {
@@ -47,7 +56,7 @@ func (r *applicationResource) WithClient(client *http.Client) *applicationResour
 }
 
 func (r *applicationResource) Create(ctx context.Context, req tfsdk.CreateResourceRequest, resp *tfsdk.CreateResourceResponse) {
-	var d applicationResourceData
+	var d applicationState
 	diags := req.Plan.Get(ctx, &d)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -64,40 +73,18 @@ func (r *applicationResource) Create(ctx context.Context, req tfsdk.CreateResour
 	resp.Diagnostics.Append(diags...)
 }
 
-func (r *applicationResource) sendCreateToREST(ctx context.Context, d *applicationResourceData) (diags diag.Diagnostics) {
+func (r *applicationResource) sendCreateToREST(ctx context.Context, d *applicationState) (diags diag.Diagnostics) {
 
-	jsonReader, jsonWriter := io.Pipe()
-	defer jsonReader.Close()
-
-	go func() {
-
-		defer jsonWriter.Close()
-		cd := applicationCreateRequest{
-			Name:    d.name.Value,
-			Bcap:    d.bcap.Value,
-			Aliases: typeconvert.ToStringSlice(d.aliases),
-		}
-		je := json.NewEncoder(jsonWriter)
-		err := je.Encode(&cd)
-		if err != nil {
-			tflog.Error(ctx, "Async JSON encoding failed", map[string]interface{}{
-				"err": err,
-			})
-		}
-	}()
-
-	c := r.lateClient.Client(ctx)
-	postResp, err := c.Post(fmt.Sprintf("%s/applications", r.restUrl), "application/json", jsonReader)
-	if err != nil {
-		diags = append(diags, diag.NewErrorDiagnostic(fmt.Sprintf("Post call to %s failed", r.restUrl), err.Error()))
-		return
+	cd := applicationCreateRequest{
+		Name:    d.name.Value,
+		Bcap:    d.bcap.Value,
+		Aliases: typeconvert.ToStringSlice(d.aliases),
 	}
-
 	ans := applicationCreateResponse{}
-	jd := json.NewDecoder(postResp.Body)
-	err = jd.Decode(&ans)
+	client := r.lateClient.Client(ctx)
+	err := rest.NewClient(r.restDetails, client).SendCreate(ctx, &cd, &ans)
 	if err != nil {
-		diags = append(diags, diag.NewErrorDiagnostic("JSON decoding failed", err.Error()))
+		diags = append(diags, diag.NewErrorDiagnostic(err.Error(), ""))
 		return
 	}
 
@@ -109,23 +96,20 @@ func (r *applicationResource) sendCreateToREST(ctx context.Context, d *applicati
 
 func (r *applicationResource) sendDeleteToREST(ctx context.Context, id string) (diags diag.Diagnostics) {
 
-	c := r.lateClient.Client(ctx)
-	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/application/%s", r.restUrl, id), nil)
-	if err != nil {
-		diags = append(diags, diag.NewErrorDiagnostic(fmt.Sprintf("Building request to %s failed", r.restUrl), err.Error()))
-		return
+	deleteReq := applicationDeleteRequest{
+		id: id,
 	}
-	_, err = c.Do(req)
+	deleteResp := struct{}{}
+	client := r.lateClient.Client(ctx)
+	err := rest.NewClient(r.restDetails, client).SendDelete(ctx, &deleteReq, &deleteResp)
 	if err != nil {
-		diags = append(diags, diag.NewErrorDiagnostic(fmt.Sprintf("Delete call to %s failed", r.restUrl), err.Error()))
-		return
+		return append(diags, diag.NewErrorDiagnostic(err.Error(), ""))
 	}
-
 	return
 }
 
 func (r *applicationResource) Delete(ctx context.Context, req tfsdk.DeleteResourceRequest, resp *tfsdk.DeleteResourceResponse) {
-	var d applicationResourceData
+	var d applicationState
 	diags := req.State.Get(ctx, &d)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -140,62 +124,44 @@ func (r *applicationResource) Delete(ctx context.Context, req tfsdk.DeleteResour
 }
 
 func (r *applicationResource) Read(ctx context.Context, req tfsdk.ReadResourceRequest, resp *tfsdk.ReadResourceResponse) {
-	var d applicationResourceData
-	diags := req.State.Get(ctx, &d)
+	var s applicationState
+	diags := req.State.Get(ctx, &s)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	state, err := r.getStateFromREST(ctx, d.id.Value)
+	state, err := r.getStateFromREST(ctx, s.id.Value)
+	if errors.Is(err, rest.ErrNotExist) {
+		resp.State.RemoveResource(ctx)
+		return
+	}
 	if err != nil {
 		resp.Diagnostics.AddError(err.Error(), "")
 		return
 	}
 
-	if err == ErrNotExist {
-		resp.State.RemoveResource(ctx)
-		return
-	}
+	s.name = state.name
+	s.bcap = state.bcap
+	s.aliases = state.aliases
 
-	d.name = state.name
-	d.bcap = state.bcap
-	d.aliases = state.aliases
-
-	diags = resp.State.Set(ctx, &d)
+	diags = resp.State.Set(ctx, &s)
 	resp.Diagnostics.Append(diags...)
 }
 
-func (r *applicationResource) getStateFromREST(ctx context.Context, id string) (d *applicationResourceData, err error) {
+func (r *applicationResource) getStateFromREST(ctx context.Context, id string) (*applicationState, error) {
 
-	c := r.lateClient.Client(ctx)
-	resp, err := c.Get(fmt.Sprintf("%s/application/%s", r.restUrl, id))
-	if err != nil {
-		err = fmt.Errorf("Delete call to %s failed: %w", r.restUrl, err)
-		return
+	client := r.lateClient.Client(ctx)
+	req := applicationDescribeRequest{
+		id: id,
 	}
-
-	defer resp.Body.Close()
-
-	switch resp.StatusCode {
-	case http.StatusNotFound:
-		err = ErrNotExist
-		return
-	case http.StatusOK:
-		break
-	default:
-		panic(fmt.Sprintf("Status code %d unexpected", resp.StatusCode))
-	}
-
 	ans := applicationDescribeResponse{}
-	jd := json.NewDecoder(resp.Body)
-	err = jd.Decode(&ans)
+	err := rest.NewClient(r.restDetails, client).SendDescribe(ctx, &req, &ans)
 	if err != nil {
-		err = fmt.Errorf("JSON decoding failed: %w", err)
-		return
+		return nil, err
 	}
 
-	d = &applicationResourceData{
+	s := &applicationState{
 		id: types.String{
 			Value: id,
 		},
@@ -207,7 +173,7 @@ func (r *applicationResource) getStateFromREST(ctx context.Context, id string) (
 		},
 		aliases: typeconvert.ToTypesStrings(ans.Aliases),
 	}
-	return
+	return s, nil
 }
 
 func (r *applicationResource) Update(ctx context.Context, req tfsdk.UpdateResourceRequest, resp *tfsdk.UpdateResourceResponse) {
@@ -223,7 +189,7 @@ func (r *applicationResource) ImportState(ctx context.Context, req tfsdk.ImportR
 		return
 	}
 
-	var d applicationResourceData
+	var d applicationState
 	d.name = state.name
 	d.bcap = state.bcap
 	d.aliases = state.aliases
