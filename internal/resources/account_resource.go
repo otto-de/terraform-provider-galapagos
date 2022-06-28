@@ -54,14 +54,10 @@ func (r *accountResource) Create(ctx context.Context, req tfsdk.CreateResourceRe
 		return
 	}
 
-	id, diags := r.sendCreateToREST(ctx, &s)
+	diags = r.sendCreateToREST(ctx, &s)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
-	}
-
-	s.id = types.String{
-		Value: id,
 	}
 
 	diags = resp.State.Set(ctx, s)
@@ -76,7 +72,7 @@ func (r *accountResource) Delete(ctx context.Context, req tfsdk.DeleteResourceRe
 		return
 	}
 
-	r.sendDeleteToREST(ctx, &s)
+	r.sendDeleteToREST(ctx, s.id.Value)
 }
 
 func (r *accountResource) Read(ctx context.Context, req tfsdk.ReadResourceRequest, resp *tfsdk.ReadResourceResponse) {
@@ -156,7 +152,7 @@ func (r *accountResource) getStateFromREST(ctx context.Context, id string) (*acc
 	return s, nil
 }
 
-func (r *accountResource) sendCreateToREST(ctx context.Context, s *accountState) (string, diag.Diagnostics) {
+func (r *accountResource) sendCreateToREST(ctx context.Context, s *accountState) diag.Diagnostics {
 
 	createReq := accountCreateRequest{
 		Name: s.name.Value,
@@ -166,15 +162,18 @@ func (r *accountResource) sendCreateToREST(ctx context.Context, s *accountState)
 	client := r.lateClient.Client(ctx)
 	err := rest.NewClient(r.restDetails, client).SendCreate(ctx, &createReq, &createResp)
 	if err != nil {
-		return "", diag.Diagnostics{diag.NewErrorDiagnostic(err.Error(), "")}
+		return diag.Diagnostics{diag.NewErrorDiagnostic(err.Error(), "")}
 	}
 
-	return createResp.Id, nil
+	s.id = types.String{
+		Value: createResp.Id,
+	}
+	return nil
 }
 
-func (r *accountResource) sendDeleteToREST(ctx context.Context, s *accountState) diag.Diagnostics {
+func (r *accountResource) sendDeleteToREST(ctx context.Context, id string) diag.Diagnostics {
 	deleteReq := accountDeleteRequest{
-		id: s.id.Value,
+		id: id,
 	}
 	deleteResp := struct{}{}
 
