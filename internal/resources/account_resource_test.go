@@ -11,67 +11,64 @@ import (
 )
 
 var (
-	ts                     = galapagos.NewTestServer(context.Background())
-	restApplicationDetails = &rest.RESTConfig{
+	restAccountDetails = &rest.RESTConfig{
 		BaseUrl: ts.URL,
-		Type:    galapagos.APPLICATION_REST,
+		Type:    galapagos.ACCOUNT_REST,
 	}
 )
 
-func TestApplicationCreate(t *testing.T) {
+func TestAccountCreate(t *testing.T) {
 
-	p := (&applicationResource{
-		restDetails: restApplicationDetails,
+	p := (&accountResource{
+		restDetails: restAccountDetails,
 	}).WithClient(ts.Client())
-	d := applicationState{
+	d := accountState{
 		name: types.String{Value: "foo"},
-		bcap: types.String{Value: "capyb"},
 	}
 	diags := p.sendCreateToREST(context.Background(), &d)
 	if diags.HasError() {
 		t.Fatal("sendCreateToREST failed", diags)
 	}
 
-	applications := ts.Applications()
-	if !reflect.DeepEqual(applications, []galapagos.TestApplication{
+	accounts := ts.Accounts()
+	if !reflect.DeepEqual(accounts, []galapagos.TestAccount{
 		{
-			Id:   "app6129484611666145821",
+			Id:   "acc5577006791947779410",
 			Name: "foo",
-			Bcap: "capyb",
 		},
 	}) {
-		t.Fatalf("Unexpected applications %#v", applications)
+		t.Fatalf("Unexpected account %#v", accounts)
 	}
 }
 
-func TestApplicationDelete(t *testing.T) {
+func TestAccountDelete(t *testing.T) {
 
-	applications := ts.Applications()
-	if len(applications) != 1 {
+	accounts := ts.Accounts()
+	if len(accounts) != 1 {
 		panic("Test setup invalid")
 	}
-	p := (&applicationResource{
-		restDetails: restApplicationDetails,
+	p := (&accountResource{
+		restDetails: restAccountDetails,
 	}).WithClient(ts.Client())
-	diags := p.sendDeleteToREST(context.Background(), applications[0].Id)
+	diags := p.sendDeleteToREST(context.Background(), accounts[0].Id)
 	if diags.HasError() {
 		t.Fatal("sendDeleteToREST failed", diags)
 	}
 
-	applications = ts.Applications()
-	if !reflect.DeepEqual(applications, []galapagos.TestApplication{}) {
-		t.Fatalf("Expected empty applications. Got: %#v", applications)
+	accounts = ts.Accounts()
+	if !reflect.DeepEqual(accounts, []galapagos.TestAccount{}) {
+		t.Fatalf("Expected empty accounts. Got: %#v", accounts)
 	}
 }
 
-func TestApplicationGet(t *testing.T) {
-	applications := ts.Applications()
-	if !reflect.DeepEqual(applications, []galapagos.TestApplication{}) {
+func TestAccountGet(t *testing.T) {
+	accounts := ts.Accounts()
+	if !reflect.DeepEqual(accounts, []galapagos.TestAccount{}) {
 		panic("Test setup invalid")
 	}
 
-	p := (&applicationResource{
-		restDetails: restApplicationDetails,
+	p := (&accountResource{
+		restDetails: restAccountDetails,
 	}).WithClient(ts.Client())
 	_, err := p.getStateFromREST(context.Background(), "notapp")
 	if err == nil {
@@ -81,10 +78,9 @@ func TestApplicationGet(t *testing.T) {
 		t.Fatal("Wrong error returned from getState:", err)
 	}
 
-	d := &applicationState{
+	d := &accountState{
 		id:   types.String{Value: "bar"},
 		name: types.String{Value: "foobar"},
-		bcap: types.String{Value: "capbp"},
 	}
 	diags := p.sendCreateToREST(context.Background(), d)
 	if diags.HasError() {
