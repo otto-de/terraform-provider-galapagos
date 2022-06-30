@@ -37,7 +37,6 @@ func (t *applicationType) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Dia
 			"bcap": {
 				Type:        types.StringType,
 				Description: "FIXME",
-				Computed:    true,
 				Required:    true,
 				PlanModifiers: tfsdk.AttributePlanModifiers{
 					// TODO: Implement Update

@@ -167,6 +167,7 @@ func (p *provider) GetDataSources(ctx context.Context) (map[string]tfsdk.DataSou
 
 func (p *provider) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
+		Description: `Provider for OTTOs' Galapagos variant`,
 		Attributes: map[string]tfsdk.Attribute{
 			"config": {
 				Description: `Configuration file for client access to Galapagos. Defaults to ~/.config/galapagos/config.json.`,
