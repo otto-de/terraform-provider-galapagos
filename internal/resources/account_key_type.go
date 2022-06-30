@@ -24,7 +24,6 @@ func (t *accountKeyType) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diag
 				Type:        types.StringType,
 				Description: "FIXME",
 				Required:    true,
-				Computed:    true,
 			},
 			"key_algorithm": {
 				Type:        types.StringType,
@@ -32,7 +31,9 @@ func (t *accountKeyType) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diag
 				Required:    true,
 			},
 			"keepers": {
-				Type:        types.MapType{},
+				Type: types.MapType{
+					ElemType: types.StringType,
+				},
 				Description: "Arbitrary map of values that, when changed, will trigger a new key to be generated.",
 				Optional:    true,
 			},
