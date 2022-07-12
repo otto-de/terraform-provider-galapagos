@@ -7,6 +7,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/otto-de/terraform-provider-galapagos/internal/galapagos"
+	"github.com/otto-de/terraform-provider-galapagos/internal/galapagos/test"
 	"github.com/otto-de/terraform-provider-galapagos/internal/rest"
 )
 
@@ -31,7 +32,7 @@ func TestAccountCreate(t *testing.T) {
 	}
 
 	accounts := ts.Accounts()
-	if !reflect.DeepEqual(accounts, []galapagos.TestAccount{
+	if !reflect.DeepEqual(accounts, []test.Account{
 		{
 			Id:   "acc5577006791947779410",
 			Name: "foo",
@@ -56,14 +57,14 @@ func TestAccountDelete(t *testing.T) {
 	}
 
 	accounts = ts.Accounts()
-	if !reflect.DeepEqual(accounts, []galapagos.TestAccount{}) {
+	if !reflect.DeepEqual(accounts, []test.Account{}) {
 		t.Fatalf("Expected empty accounts. Got: %#v", accounts)
 	}
 }
 
 func TestAccountGet(t *testing.T) {
 	accounts := ts.Accounts()
-	if !reflect.DeepEqual(accounts, []galapagos.TestAccount{}) {
+	if !reflect.DeepEqual(accounts, []test.Account{}) {
 		panic("Test setup invalid")
 	}
 

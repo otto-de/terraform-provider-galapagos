@@ -7,11 +7,12 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/otto-de/terraform-provider-galapagos/internal/galapagos"
+	"github.com/otto-de/terraform-provider-galapagos/internal/galapagos/test"
 	"github.com/otto-de/terraform-provider-galapagos/internal/rest"
 )
 
 var (
-	ts                     = galapagos.NewTestServer(context.Background())
+	ts                     = test.NewServer(context.Background())
 	restApplicationDetails = &rest.RESTConfig{
 		BaseUrl: ts.URL,
 		Type:    galapagos.APPLICATION_REST,
@@ -33,7 +34,7 @@ func TestApplicationCreate(t *testing.T) {
 	}
 
 	applications := ts.Applications()
-	if !reflect.DeepEqual(applications, []galapagos.TestApplication{
+	if !reflect.DeepEqual(applications, []test.Application{
 		{
 			Id:   "app6129484611666145821",
 			Name: "foo",
@@ -59,14 +60,14 @@ func TestApplicationDelete(t *testing.T) {
 	}
 
 	applications = ts.Applications()
-	if !reflect.DeepEqual(applications, []galapagos.TestApplication{}) {
+	if !reflect.DeepEqual(applications, []test.Application{}) {
 		t.Fatalf("Expected empty applications. Got: %#v", applications)
 	}
 }
 
 func TestApplicationGet(t *testing.T) {
 	applications := ts.Applications()
-	if !reflect.DeepEqual(applications, []galapagos.TestApplication{}) {
+	if !reflect.DeepEqual(applications, []test.Application{}) {
 		panic("Test setup invalid")
 	}
 

@@ -42,7 +42,7 @@ func (c *Client) SendCreate(ctx context.Context, createRequest interface{}, crea
 		}
 	}()
 
-	postResp, err := c.Client.Post(fmt.Sprintf("%s/%s", c.cfg.BaseUrl, c.cfg.Type.Plural), "application/json", jsonReader)
+	postResp, err := c.Client.Post(fmt.Sprintf("%s/api/%s", c.cfg.BaseUrl, c.cfg.Type.Plural), "application/json", jsonReader)
 	if err != nil {
 		return fmt.Errorf("Post call to %s failed: %w", c.cfg.BaseUrl, err)
 	}
@@ -60,7 +60,7 @@ func (c *Client) SendDelete(ctx context.Context, deleteRequest fmt.Stringer, del
 
 	escaped := url.PathEscape(deleteRequest.String())
 
-	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/%s/%s", c.cfg.BaseUrl, c.cfg.Type.Singular, escaped), nil)
+	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/api/%s/%s", c.cfg.BaseUrl, c.cfg.Type.Singular, escaped), nil)
 	if err != nil {
 		return fmt.Errorf("Building request to %s failed: %w", c.cfg.BaseUrl, err)
 	}
@@ -75,7 +75,7 @@ func (c *Client) SendDelete(ctx context.Context, deleteRequest fmt.Stringer, del
 func (c *Client) SendDescribe(ctx context.Context, describeRequest fmt.Stringer, describeResponse interface{}) error {
 	escaped := url.PathEscape(describeRequest.String())
 
-	resp, err := c.Client.Get(fmt.Sprintf("%s/%s/%s", c.cfg.BaseUrl, c.cfg.Type.Singular, escaped))
+	resp, err := c.Client.Get(fmt.Sprintf("%s/api/%s/%s", c.cfg.BaseUrl, c.cfg.Type.Singular, escaped))
 	if err != nil {
 		return fmt.Errorf("Describe call to %s failed: %w", c.cfg.BaseUrl, err)
 	}
