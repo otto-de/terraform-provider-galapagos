@@ -133,7 +133,7 @@ func (r *accountResource) getStateFromREST(ctx context.Context, id string) (*acc
 		id: id,
 	}
 	ans := accountDescribeResponse{}
-	err := rest.NewClient(r.restDetails, client).SendDescribe(ctx, &req, &ans)
+	err := rest.NewClient(r.restDetails, client).SendDescribe(ctx, rest.DescribeOptions{}, &req, &ans)
 	if err != nil {
 		return nil, err
 	}

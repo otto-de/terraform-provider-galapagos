@@ -156,7 +156,7 @@ func (r *applicationResource) getStateFromREST(ctx context.Context, id string) (
 		id: id,
 	}
 	ans := applicationDescribeResponse{}
-	err := rest.NewClient(r.restDetails, client).SendDescribe(ctx, &req, &ans)
+	err := rest.NewClient(r.restDetails, client).SendDescribe(ctx, rest.DescribeOptions{}, &req, &ans)
 	if err != nil {
 		return nil, err
 	}

@@ -40,6 +40,12 @@ func NewServer(ctx context.Context) *TestServer {
 		}
 		s.applications.Create(ctx, w, r)
 	}
+	certificatesHandler := func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			panic(r.Method)
+		}
+		s.applications.GetCertificates(ctx, w, r)
+	}
 	topicsHandler := func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			panic(r.Method)
@@ -50,6 +56,7 @@ func NewServer(ctx context.Context) *TestServer {
 	// /api is hardcoded in Galapagos so mirror that here
 	mux.HandleFunc("/api/accounts", accountsHandler)
 	mux.HandleFunc("/api/applications", applicationsHandler)
+	mux.Handle("/api/certificates/", http.StripPrefix("/api/certificates/", http.HandlerFunc(certificatesHandler)))
 	mux.HandleFunc("/api/topics", topicsHandler)
 	accountHandler := func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {

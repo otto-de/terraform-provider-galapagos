@@ -15,11 +15,14 @@ type ApplicationController struct {
 	Resources []Application
 }
 
+type EnvironmentName string
+
 type Application struct {
-	Id      string
-	Name    string
-	Bcap    string
-	Aliases []string
+	Id           string
+	Name         string
+	Bcap         string
+	Aliases      []string
+	Certificates map[EnvironmentName]string
 }
 
 func (c *ApplicationController) Create(ctx context.Context, w http.ResponseWriter, r *http.Request) {
@@ -59,6 +62,21 @@ func (c *ApplicationController) Create(ctx context.Context, w http.ResponseWrite
 	}
 }
 
+func (c *ApplicationController) GetCertificates(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	var certificates map[EnvironmentName]string
+	for _, app := range c.Resources {
+		if app.Id == r.URL.Path {
+			certificates = app.Certificates
+			break
+		}
+	}
+
+	if certificates == nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+}
+
 func (c *ApplicationController) Delete(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	deleteI := -1
 	for i, app := range c.Resources {
@@ -66,6 +84,10 @@ func (c *ApplicationController) Delete(ctx context.Context, w http.ResponseWrite
 			deleteI = i
 			break
 		}
+	}
+	if deleteI == -1 {
+		w.WriteHeader(http.StatusNotFound)
+		return
 	}
 	c.Resources = append(c.Resources[0:deleteI], c.Resources[deleteI+1:]...)
 }

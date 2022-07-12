@@ -23,6 +23,12 @@ type CreateOptions struct {
 	Environment  string
 }
 
+type DescribeOptions struct {
+	Environment string
+	Plural      string
+	Singular    string
+}
+
 func NewClient(cfg *RESTConfig, client *http.Client) *Client {
 	return &Client{
 		cfg:    cfg,
@@ -97,10 +103,25 @@ func (c *Client) SendDelete(ctx context.Context, deleteRequest fmt.Stringer, del
 	return nil
 }
 
-func (c *Client) SendDescribe(ctx context.Context, describeRequest fmt.Stringer, describeResponse interface{}) error {
+func (c *Client) SendDescribe(ctx context.Context, opts DescribeOptions, describeRequest fmt.Stringer, describeResponse interface{}) error {
 	escaped := url.PathEscape(describeRequest.String())
 
-	resp, err := c.Client.Get(fmt.Sprintf("%s/api/%s/%s", c.cfg.BaseUrl, c.cfg.Type.Singular, escaped))
+	var pluralOrSingular string
+	if opts.Plural != "" {
+		pluralOrSingular = opts.Plural
+	} else if opts.Singular != "" {
+		pluralOrSingular = opts.Singular
+	} else {
+		pluralOrSingular = c.cfg.Type.Singular
+	}
+
+	var url string
+	if opts.Environment == "" {
+		url = fmt.Sprintf("%s/api/%s/%s", c.cfg.BaseUrl, pluralOrSingular, escaped)
+	} else {
+		url = fmt.Sprintf("%s/api/%s/%s/%s", c.cfg.BaseUrl, pluralOrSingular, opts.Environment, escaped)
+	}
+	resp, err := c.Client.Get(url)
 	if err != nil {
 		return fmt.Errorf("Describe call to %s failed: %w", c.cfg.BaseUrl, err)
 	}
