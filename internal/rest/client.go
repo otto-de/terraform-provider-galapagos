@@ -18,6 +18,11 @@ type Client struct {
 	Client *http.Client
 }
 
+type CreateOptions struct {
+	IsIdempotent bool
+	Environment  string
+}
+
 func NewClient(cfg *RESTConfig, client *http.Client) *Client {
 	return &Client{
 		cfg:    cfg,
@@ -25,7 +30,7 @@ func NewClient(cfg *RESTConfig, client *http.Client) *Client {
 	}
 }
 
-func (c *Client) SendCreate(ctx context.Context, createRequest interface{}, createResponse interface{}) error {
+func (c *Client) SendCreate(ctx context.Context, opts CreateOptions, createRequest interface{}, createResponse interface{}) error {
 
 	jsonReader, jsonWriter := io.Pipe()
 	defer jsonReader.Close()
@@ -42,12 +47,32 @@ func (c *Client) SendCreate(ctx context.Context, createRequest interface{}, crea
 		}
 	}()
 
-	postResp, err := c.Client.Post(fmt.Sprintf("%s/api/%s", c.cfg.BaseUrl, c.cfg.Type.Plural), "application/json", jsonReader)
-	if err != nil {
-		return fmt.Errorf("Post call to %s failed: %w", c.cfg.BaseUrl, err)
+	var method string
+	if opts.IsIdempotent {
+		method = http.MethodPut
+
+	} else {
+		method = http.MethodPost
 	}
 
-	jd := json.NewDecoder(postResp.Body)
+	var url string
+	if opts.Environment == "" {
+		url = fmt.Sprintf("%s/api/%s", c.cfg.BaseUrl, c.cfg.Type.Plural)
+	} else {
+		url = fmt.Sprintf("%s/api/%s/%s", c.cfg.BaseUrl, opts.Environment, c.cfg.Type.Plural)
+	}
+
+	httpReq, err := http.NewRequest(method, url, jsonReader)
+	if err != nil {
+		return fmt.Errorf("Building Request to %s failed: %w", url, err)
+	}
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpResp, err := c.Client.Do(httpReq)
+	if err != nil {
+		return fmt.Errorf("Put call to %s failed: %w", url, err)
+	}
+
+	jd := json.NewDecoder(httpResp.Body)
 	err = jd.Decode(&createResponse)
 	if err != nil {
 		return fmt.Errorf("JSON decoding failed: %w", err)

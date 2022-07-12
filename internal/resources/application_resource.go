@@ -82,7 +82,7 @@ func (r *applicationResource) sendCreateToREST(ctx context.Context, d *applicati
 	}
 	ans := applicationCreateResponse{}
 	client := r.lateClient.Client(ctx)
-	err := rest.NewClient(r.restDetails, client).SendCreate(ctx, &cd, &ans)
+	err := rest.NewClient(r.restDetails, client).SendCreate(ctx, rest.CreateOptions{}, &cd, &ans)
 	if err != nil {
 		diags = append(diags, diag.NewErrorDiagnostic(err.Error(), ""))
 		return

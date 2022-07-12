@@ -160,7 +160,7 @@ func (r *accountResource) sendCreateToREST(ctx context.Context, s *accountState)
 	createResp := accountCreateResponse{}
 
 	client := r.lateClient.Client(ctx)
-	err := rest.NewClient(r.restDetails, client).SendCreate(ctx, &createReq, &createResp)
+	err := rest.NewClient(r.restDetails, client).SendCreate(ctx, rest.CreateOptions{}, &createReq, &createResp)
 	if err != nil {
 		return diag.Diagnostics{diag.NewErrorDiagnostic(err.Error(), "")}
 	}
